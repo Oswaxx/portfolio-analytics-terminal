@@ -25,7 +25,7 @@
 
 | Dashboard | ML Predictions | Technical Indicators |
 |-----------|---------------|----------------------|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Predictions](docs/screenshots/predicciones.png) | ![Indicators](docs/screenshots/indicadores.png) |
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Predictions](docs/screenshots/predicciones.png) | ![Indicators](docs/screenshots/Indicadores.png) |
 
 | Correlation Matrix | Trade History | Tax Report |
 |--------------------|---------------|------------|
