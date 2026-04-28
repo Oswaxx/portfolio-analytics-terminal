@@ -25,11 +25,11 @@
 
 | Dashboard | ML Predictions | Technical Indicators |
 |-----------|---------------|----------------------|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Predictions](docs/screenshots/predictions.png) | ![Indicators](docs/screenshots/indicators.png) |
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Predictions](docs/screenshots/predicciones.png) | ![Indicators](docs/screenshots/indicadores.png) |
 
 | Correlation Matrix | Trade History | Tax Report |
 |--------------------|---------------|------------|
-| ![Correlations](docs/screenshots/correlations.png) | ![Trades](docs/screenshots/trades.png) | ![Fiscal](docs/screenshots/fiscal.png) |
+| ![Correlations](docs/screenshots/correlaciones.png) | ![Trades](docs/screenshots/historial_cerrado.png) | ![Fiscal](docs/screenshots/fiscal.png) |
 
 ---
 
