@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- Forcing exactly 1920x1080 bounds contextually if viewed on 1080p -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio PRO Terminal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <!-- PapaParse for local CSV read -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</head>
+<body>
+
+<div id="app-container">
+    
+    <!-- LEFT SIDEBAR -->
+    <nav id="sidebar">
+        <div class="sidebar-logo">
+            <span style="font-size: 1.2rem; margin-right: 8px;">◈</span> TERMINAL PRO
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-link active" data-target="dashboard">▣ Portfolio Dashboard</li>
+            <li class="nav-link" data-target="registro-compra">+ Registro de Compra</li>
+            <li class="nav-link" data-target="hapi-import">⇪ Importar HAPI CSV</li>
+            <li class="nav-link" data-target="log-history">◷ Log Histórico & Movimientos</li>
+            <li class="nav-link" data-target="deposito-mx">⬇ Depósito MX→Hapi</li>
+            <li class="nav-link" data-target="registro-venta">$ Registro de Venta</li>
+            <li class="nav-link" data-target="mis-metas">◎ Mis Metas</li>
+            <li class="nav-link" data-target="resumen-fiscal">⊟ Resumen Fiscal</li>
+            <li class="nav-link" data-target="correlaciones">⊞ Correlaciones</li>
+            <li class="nav-link" data-target="centro-predicciones">◉ Centro de Predicciones</li>
+            <li class="nav-link" data-target="historial-cerrado">✓ Historial Cerrado</li>
+            <li class="nav-link" data-target="resumen-global">◈ Resumen Global</li>
+        </ul>
+        <div style="margin-top: auto; padding: 16px; color: var(--text-muted); font-size: 0.7rem;">
+            Última Importación:<br>
+            <span id="last-import-date" class="font-mono">--</span>
+        </div>
+    </nav>
+
+    <!-- MAIN AREA -->
+    <main id="main-area">
+        <div id="alert-banner"></div>
+        <header id="top-header">
+            <div style="font-weight: 500;">Oswal's Portfolio</div>
+            <div id="header-info">
+                <span style="color: var(--text-muted); font-size: 0.75rem;">
+                    Sync: <span id="last-refresh-time" class="font-mono">--:--:--</span>
+                </span>
+                <button class="refresh-btn" onclick="forceRefresh()">⟳ Refresh</button>
+            </div>
+        </header>
+
+        <!-- DASHBOARD VIEW -->
+        <div id="dashboard" class="content-view active">
+
+            <!-- KPIs — unified draggable container (order saved in localStorage) -->
+            <div id="kpi-container" class="kpi-row">
+                <div class="card kpi-card" draggable="true" data-kpi-id="kpi-value">
+                    <div class="kpi-title">Valor Actual</div>
+                    <p class="kpi-value font-mono" id="kpi-value">...</p>
+                </div>
+                <div class="card kpi-card" draggable="true" data-kpi-id="kpi-pnl">
+                    <div class="kpi-title">P&amp;L Global</div>
+                    <p class="kpi-value font-mono" id="kpi-pnl">...</p>
+                </div>
+                <div class="card kpi-card" draggable="true" data-kpi-id="kpi-best-worst">
+                    <div class="kpi-title">Mejor / Peor Activo</div>
+                    <p class="kpi-value font-mono" id="kpi-best-worst" style="font-size:0.8rem; margin-top:4px;">...</p>
+                </div>
+                <div class="card kpi-card" draggable="true" data-kpi-id="kpi-hapi-balance" title="Click para editar">
+                    <div class="kpi-title">Disponible en Hapi</div>
+                    <p class="kpi-value font-mono editable-kpi" id="kpi-hapi-balance" onclick="editHapiBalance()">...</p>
+                </div>
+                <div class="card kpi-card" draggable="true" data-kpi-id="kpi-neto-posiciones" title="Lo que realmente quedó invertido en tokens después de comisiones Hapi. Acciones = sin comisión.">
+                    <div class="kpi-title">Neto en Posiciones</div>
+                    <p class="kpi-value font-mono" id="kpi-neto-posiciones" style="color:#58A6FF;">...</p>
+                </div>
+                <div class="card kpi-card" draggable="true" data-kpi-id="kpi-venta-hoy" title="Lo que Hapi te daría si vendes todo ahora. Crypto: descuenta 1% Bakkt. Acciones: sin comisión.">
+                    <div class="kpi-title">Si Vendes Todo Hoy</div>
+                    <p class="kpi-value font-mono" id="kpi-venta-hoy">...</p>
+                </div>
+                <div class="card kpi-card" draggable="true" data-kpi-id="kpi-fee-spei" title="0.9% de spread si retiras todo por SPEI">
+                    <div class="kpi-title">Comisión Retiro SPEI</div>
+                    <p class="kpi-value font-mono text-perdida" id="kpi-fee-spei">...</p>
+                </div>
+                <div class="card kpi-card" draggable="true" data-kpi-id="kpi-neto-banco" title="Pesos mexicanos que llegarían a tu banco si vendes todo y retiras por SPEI (0.9% spread). Sin ISR. Tipo de cambio en tiempo real.">
+                    <div class="kpi-title">Neto Real a tu Banco <span style="font-size:.68em; opacity:.55; font-weight:400;">MXN</span></div>
+                    <p class="kpi-value font-mono" id="kpi-neto-banco">...</p>
+                    <div id="kpi-neto-banco-fx" style="font-size:.68rem; color:var(--text-muted); margin-top:2px;"></div>
+                </div>
+                <div class="card kpi-card" draggable="true" data-kpi-id="kpi-neto-cerradas" title="Resultado neto de todas tus operaciones cerradas (ganancias − pérdidas realizadas). Sin ISR.">
+                    <div class="kpi-title">Neto Operaciones Cerradas</div>
+                    <p class="kpi-value font-mono" id="kpi-neto-cerradas">...</p>
+                    <div id="kpi-neto-cerradas-detail" style="font-size:.68rem; color:var(--text-muted); margin-top:2px;"></div>
+                </div>
+            </div>
+            <div style="font-size:0.65rem; color:#8B949E; margin:-2px 0 8px 4px; line-height:1.5;">
+                ⚠️ Cálculos de venta y retiro son estimados. Hapi no cobra comisión en acciones/ETFs. Crypto: 1% vía Bakkt. Retiro SPEI: $10 fijo. No incluye ISR — consulta a un contador.
+            </div>
+
+            <!-- Market Info Bar (Fear & Greed + BTC Dominance) -->
+            <div id="market-bar">
+                <div class="market-bar-card">
+                    <div>
+                        <div class="market-bar-label">Fear &amp; Greed</div>
+                        <div id="fg-value" style="font-size:1.3rem; font-weight:700; font-family:'JetBrains Mono',monospace;">--</div>
+                        <div id="fg-label" style="font-size:0.68rem; color:var(--text-muted);">--</div>
+                    </div>
+                </div>
+                <div class="market-bar-card">
+                    <div>
+                        <div class="market-bar-label">BTC Dominance</div>
+                        <div id="dom-value" style="font-size:1.1rem; font-weight:700; font-family:'JetBrains Mono',monospace;">--%</div>
+                        <div id="dom-interp" style="font-size:0.68rem; color:var(--text-muted);">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signals Panel -->
+            <div id="signals-panel">
+                <span style="color:var(--text-muted); font-size:0.68rem; margin-right:6px;">Señales:</span>
+                <span style="color:var(--text-muted); font-size:0.68rem;" id="signals-loading">Cargando indicadores...</span>
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+                <table id="portfolio-table">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">Activo</th>
+                            <th>7D Trend</th>
+                            <th onclick="sortTable(2)">Precio Actual</th>
+                            <th>Cost Prom.</th>
+                            <th onclick="sortTable(4)">Invertido</th>
+                            <th onclick="sortTable(5)">Valor Act.</th>
+                            <th onclick="sortTable(6)">P&L USD</th>
+                            <th onclick="sortTable(7)">P&L %</th>
+                            <th title="Relative Strength Index (14 períodos). >70 sobrecomprado, <30 sobrevendido">RSI</th>
+                            <th title="Volumen de trading en las últimas 24 horas">Vol 24h</th>
+                            <th title="Señal basada en Medias Móviles de 50 y 200 días">Señal MA</th>
+                            <th title="MACD · Bollinger Bands · Sentiment — hover para detalle">Señales</th>
+                            <th title="Lo que recibirías de Hapi si vendes ahora. Crypto: descuenta 1% Bakkt. Acciones: sin comisión.">Venta Neta</th>
+                            <th>ML Predict</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="card chart-card">
+                    <div class="chart-header">Distribución de Activos</div>
+                    <div class="chart-inner">
+                        <canvas id="donutChart"></canvas>
+                    </div>
+                </div>
+                <div class="card chart-card">
+                    <div class="chart-header">Inversión vs Retorno ($)</div>
+                    <div class="chart-inner">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REGISTRO DE COMPRA VIEW -->
+        <div id="registro-compra" class="content-view">
+            <div class="section-body">
+                <div class="card" style="margin-bottom:12px;">
+                    <div class="section-title">Nueva Compra</div>
+                    <div class="form-row">
+                        <label>Fecha y hora
+                            <input type="datetime-local" id="compra-fecha">
+                        </label>
+                        <label>Activo
+                            <select id="compra-activo" onchange="onCompraAssetChange()">
+                                <option value="BTC">BTC</option>
+                                <option value="ETH">ETH</option>
+                                <option value="SOL">SOL</option>
+                                <option value="XRP">XRP</option>
+                                <option value="DOGE">DOGE</option>
+                                <option value="TTWO">TTWO</option>
+                            </select>
+                        </label>
+                        <label>Cantidad (tokens / acciones)
+                            <input type="number" id="compra-cantidad" min="0" step="any" placeholder="0.001" oninput="calcCompra()">
+                        </label>
+                        <label>Precio por unidad (USD)
+                            <input type="number" id="compra-precio" min="0" step="any" placeholder="50000" oninput="calcCompra()">
+                            <small id="compra-precio-hint" style="color:var(--text-muted); font-size:0.72rem; margin-top:2px;"></small>
+                        </label>
+                        <label>Monto total (USD)
+                            <input type="number" id="compra-total" readonly style="color:var(--accent);">
+                        </label>
+                        <label>Método de fondeo
+                            <select id="compra-metodo">
+                                <option value="spei">SPEI (0.9%)</option>
+                                <option value="tarjeta">Tarjeta (3.85% / mín $2.99)</option>
+                                <option value="internacional">Transferencia internacional</option>
+                                <option value="crypto">Crypto transfer</option>
+                            </select>
+                        </label>
+                        <label>Comisión Hapi
+                            <select id="compra-comision-tipo" onchange="calcCompra()">
+                                <option value="crypto">Cripto (1%)</option>
+                                <option value="accion_entera">Acción entera ($0.10)</option>
+                                <option value="accion_frac">Acción fraccionada ($0.15)</option>
+                            </select>
+                        </label>
+                        <label>Notas (opcional)
+                            <input type="text" id="compra-notas" placeholder="Ej: DCA mensual">
+                        </label>
+                    </div>
+                    <div class="calc-result" id="compra-result" style="display:none; margin:10px 0;">
+                        <div><span>Monto bruto: </span><strong id="compra-bruto">-</strong></div>
+                        <div><span>Comisión Hapi: </span><strong id="compra-fee" class="text-perdida">-</strong></div>
+                        <div><span>Monto real invertido: </span><strong id="compra-neto" class="text-ganancia">-</strong></div>
+                    </div>
+                    <button class="primary" onclick="submitCompra()">Registrar Compra</button>
+                </div>
+
+                <!-- Historial de compras -->
+                <div class="card" style="margin-bottom:12px;">
+                    <div class="section-title">Historial de Compras</div>
+                    <div class="table-container">
+                        <table id="compras-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left;">Fecha</th>
+                                    <th style="text-align:left;">Activo</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio USD</th>
+                                    <th>Bruto USD</th>
+                                    <th>Método</th>
+                                    <th>Comisión</th>
+                                    <th>Real USD</th>
+                                    <th>Notas</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Resumen por activo -->
+                <div class="card">
+                    <div class="section-title">Resumen por Activo</div>
+                    <div class="table-container">
+                        <table id="compras-summary-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left;">Activo</th>
+                                    <th>Cantidad Total</th>
+                                    <th>Total Invertido</th>
+                                    <th>Cost Prom. (USD)</th>
+                                    <th>Comisiones Pagadas</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- IMPORT HAPI VIEW -->
+        <div id="hapi-import" class="content-view">
+            <div class="card" style="margin-bottom: 16px;">
+                <h4 style="margin-top:0; font-size:1rem;">Importar Datos Históricos desde HAPI</h4>
+                <p style="color:var(--text-muted); font-size:0.8rem;">Arrastra tu CSV exportado de Hapi. Se filtrarán duplicados autómaticamente basando la comprobación en Fecha + Activo + Cantidad de Token. El costo DCA promedio será recalculado.</p>
+                
+                <div class="drop-zone" id="drop-zone">
+                    Arrastra el archivo .csv aquí o 
+                    <input type="file" id="file-input" accept=".csv" style="display:none;">
+                    <button onclick="document.getElementById('file-input').click()" style="margin-left:8px;">Examinar</button>
+                </div>
+            </div>
+
+            <div class="card" id="preview-section" style="display:none;">
+                <div class="kpi-title" style="display:flex; justify-content:space-between;">
+                    <span>Vista Previa (Primeras 5 líneas)</span>
+                    <button class="primary" onclick="confirmImport()">Confirmar Importación</button>
+                </div>
+                <div class="table-container" style="margin-top:8px;">
+                    <table id="preview-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th><th>Activo</th><th>Tipo</th><th>Cantidad</th><th>Precio</th><th>Fee Calculado</th><th>Neto</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOG HISTORY VIEW -->
+        <div id="log-history" class="content-view">
+            <!-- Row 1: Line Chart -->
+            <div class="card" style="height: 300px; display:flex; flex-direction:column; margin-bottom: 16px;">
+                <div class="chart-header">Evolución Global (Refresca cada Mínuto)</div>
+                <div style="flex:1; position:relative;">
+                    <canvas id="logChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 2: Movements Table -->
+            <div class="card" style="flex:1; display:flex; flex-direction:column; min-height:300px;">
+                <div class="chart-header" style="display:flex; justify-content:space-between;">
+                    <span>Historial de Movimientos</span>
+                    <span style="color:var(--red-loss);">Fees Acumuladas: <span id="total-fees-paid" class="font-mono"></span></span>
+                </div>
+                <div class="table-container" style="flex:1; overflow-y:auto; margin-top:8px;">
+                    <table id="movements-table">
+                        <thead style="position: sticky; top:0; background: var(--bg-card);">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Activo</th>
+                                <th>Tipo</th>
+                                <th>Cant.</th>
+                                <th>Precio</th>
+                                <th>Fees</th>
+                                <th>Neto</th>
+                                <th>Origen</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEPOSITO MX → HAPI VIEW -->
+        <div id="deposito-mx" class="content-view">
+            <div class="section-body">
+                <div class="card" style="margin-bottom:12px;">
+                    <div class="section-title">Nuevo Depósito MX → Hapi</div>
+                    <div class="form-row">
+                        <label>Fecha
+                            <input type="date" id="dep-fecha">
+                        </label>
+                        <label>Monto MXN
+                            <input type="number" id="dep-mxn" min="0" step="0.01" placeholder="1000" oninput="calcDeposit()">
+                        </label>
+                        <label>Método
+                            <select id="dep-metodo" onchange="calcDeposit()">
+                                <option value="spei">SPEI (0.9%)</option>
+                                <option value="tarjeta">Tarjeta (3.85% / min $2.99 USD)</option>
+                            </select>
+                        </label>
+                        <label>Tipo de cambio (MXN/USD)
+                            <input type="number" id="dep-fx" step="0.01" placeholder="cargando…" oninput="calcDeposit()">
+                            <small id="dep-fx-live" style="color:var(--accent);font-size:0.75rem;"></small>
+                        </label>
+                    </div>
+                    <div class="calc-result" id="dep-result" style="display:none;">
+                        <div><span>Bruto USD: </span><strong id="dep-bruto">-</strong></div>
+                        <div><span>Fee USD: </span><strong id="dep-fee" class="text-perdida">-</strong></div>
+                        <div><span>Neto USD en Hapi: </span><strong id="dep-neto" class="text-ganancia">-</strong></div>
+                    </div>
+                    <button class="primary" onclick="submitDeposit()">Registrar Depósito</button>
+                </div>
+
+                <div class="card">
+                    <div class="section-title" style="display:flex; justify-content:space-between;">
+                        <span>Historial de Depósitos</span>
+                        <span style="color:var(--red-loss); font-size:0.75rem;">Fees totales: <span id="dep-total-fees" class="font-mono">$0.00</span></span>
+                    </div>
+                    <div class="table-container">
+                        <table id="deposits-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left;">Fecha</th>
+                                    <th>MXN</th>
+                                    <th>Método</th>
+                                    <th>Fee USD</th>
+                                    <th>Neto USD</th>
+                                    <th>FX</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REGISTRO DE VENTA VIEW -->
+        <div id="registro-venta" class="content-view">
+            <div class="section-body">
+                <div class="card" style="margin-bottom:12px;">
+                    <div class="section-title">Registrar Venta</div>
+                    <div class="form-row">
+                        <label>Fecha
+                            <input type="date" id="venta-fecha">
+                        </label>
+                        <label>Activo
+                            <select id="venta-activo" onchange="onVentaAssetChange()">
+                                <option value="BTC">BTC</option>
+                                <option value="ETH">ETH</option>
+                                <option value="SOL">SOL</option>
+                                <option value="XRP">XRP</option>
+                                <option value="DOGE">DOGE</option>
+                                <option value="TTWO">TTWO</option>
+                            </select>
+                        </label>
+                        <label>Cantidad
+                            <input type="number" id="venta-qty" min="0" step="any" placeholder="0.001" oninput="calcSale()">
+                        </label>
+                        <label>Precio de Venta (USD)
+                            <input type="number" id="venta-precio" min="0" step="any" placeholder="50000" oninput="calcSale()">
+                        </label>
+                        <label>Precio Compra Prom. (USD)
+                            <input type="number" id="venta-compra" min="0" step="any" readonly style="color:var(--text-muted);">
+                        </label>
+                        <label>Tipo Comisión
+                            <select id="venta-comision" onchange="calcSale()">
+                                <option value="crypto">Cripto (1%)</option>
+                                <option value="accion_entera">Acción entera ($0.10)</option>
+                                <option value="accion_frac">Acción fraccionada ($0.15)</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="calc-result" id="venta-result" style="display:none;">
+                        <div><span>Bruto: </span><strong id="venta-bruto">-</strong></div>
+                        <div><span>Comisión: </span><strong id="venta-fee" class="text-perdida">-</strong></div>
+                        <div><span>Neto: </span><strong id="venta-neto">-</strong></div>
+                        <div><span>P&L: </span><strong id="venta-pnl">-</strong></div>
+                    </div>
+                    <button class="primary" onclick="submitSale()">Registrar Venta</button>
+                </div>
+
+                <div class="card">
+                    <div class="section-title">Historial de Ventas</div>
+                    <div class="table-container">
+                        <table id="ventas-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left;">Fecha</th>
+                                    <th style="text-align:left;">Activo</th>
+                                    <th>Cantidad</th>
+                                    <th>P. Venta</th>
+                                    <th>P. Compra</th>
+                                    <th>Fee</th>
+                                    <th>Neto USD</th>
+                                    <th>P&L</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MIS METAS VIEW -->
+        <div id="mis-metas" class="content-view">
+            <div class="section-body">
+                <div class="card">
+                    <div class="section-title">Metas de Salida por Activo</div>
+                    <p style="color:var(--text-muted); font-size:0.75rem; margin-top:0;">
+                        Define tu Take Profit, Stop-Loss y % a vender. Presiona Guardar Metas cuando termines.
+                    </p>
+                    <div style="margin-bottom:0.75rem;">
+                        <button class="btn-primary" id="btn-guardar-metas" onclick="guardarTodasMetas()">Guardar Metas</button>
+                        <span id="metas-save-status" style="font-size:0.75rem; margin-left:0.75rem; color:var(--text-muted);"></span>
+                    </div>
+                    <div class="table-container">
+                        <table id="metas-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left;">Activo</th>
+                                    <th>Precio Actual</th>
+                                    <th>Take Profit (USD)</th>
+                                    <th>Stop-Loss (USD)</th>
+                                    <th>% a Vender</th>
+                                    <th>Progreso (→TP)</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="metas-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESUMEN FISCAL VIEW -->
+        <div id="resumen-fiscal" class="content-view">
+            <div class="section-body">
+                <div class="bg-alerta">
+                    Disclaimer: Este resumen es solo informativo. Consulta a un contador para tu declaración fiscal real.
+                </div>
+                <div class="card">
+                    <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Resumen Fiscal de Ventas</span>
+                        <button class="primary" onclick="exportFiscalCSV()" style="font-size:0.72rem; padding:3px 10px;">Exportar CSV</button>
+                    </div>
+                    <div class="year-tabs" id="fiscal-year-tabs"></div>
+                    <div class="kpi-row" style="margin-bottom:10px;">
+                        <div class="card kpi-card">
+                            <div class="kpi-title">Ganancias</div>
+                            <p class="kpi-value font-mono text-ganancia" id="fiscal-gains">$0.00</p>
+                        </div>
+                        <div class="card kpi-card">
+                            <div class="kpi-title">Pérdidas</div>
+                            <p class="kpi-value font-mono text-perdida" id="fiscal-losses">$0.00</p>
+                        </div>
+                        <div class="card kpi-card">
+                            <div class="kpi-title">Resultado Neto</div>
+                            <p class="kpi-value font-mono" id="fiscal-net">$0.00</p>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="fiscal-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left;">Fecha</th>
+                                    <th style="text-align:left;">Activo</th>
+                                    <th>Cantidad</th>
+                                    <th>P. Venta</th>
+                                    <th>P. Compra</th>
+                                    <th>Neto USD</th>
+                                    <th>P&L USD</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fiscal-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CORRELACIONES VIEW -->
+        <div id="correlaciones" class="content-view">
+            <div class="section-body">
+                <div class="card" style="margin-bottom:12px;">
+                    <div class="section-title">Matriz de Correlación (90 días)</div>
+                    <p style="color:var(--text-muted); font-size:0.75rem; margin-top:0;">
+                        Verde = correlación alta (mueven juntos). Rojo = correlación negativa. Gris = sin correlación.
+                    </p>
+                    <div id="corr-canvas-wrap">
+                        <canvas id="corrChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="section-title">Insights Automáticos</div>
+                    <ul id="corr-insights" style="color:var(--text-muted); font-size:0.78rem; padding-left:16px; margin:0;"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTRO DE PREDICCIONES VIEW -->
+        <div id="centro-predicciones" class="content-view">
+            <div class="section-body">
+                <div class="bg-alerta" style="margin-bottom:12px;">
+                    Señales informativas únicamente — no constituyen consejo financiero.
+                </div>
+                <div class="card" style="margin-bottom:12px;">
+                    <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Predicciones por Activo</span>
+                        <button class="primary" onclick="trainAllLSTM()" id="btn-train-all">⚙ Entrenar todos</button>
+                    </div>
+                    <div id="pred-center-status" style="color:var(--text-muted); font-size:0.72rem; margin:6px 0;"></div>
+                    <div class="table-container">
+                        <table id="pred-center-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left;">Activo</th>
+                                    <th>Precio Actual</th>
+                                    <th>LSTM +30d</th>
+                                    <th>LSTM +60d</th>
+                                    <th>LSTM +90d</th>
+                                    <th>Confiabilidad</th>
+                                    <th>Modelo</th>
+                                    <th>Últ. entrenamiento</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pred-center-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORIAL CERRADO VIEW -->
+        <div id="historial-cerrado" class="content-view">
+            <div class="section-body">
+                <!-- KPI Cards -->
+                <div class="kpi-row" style="flex-wrap:wrap;">
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Ganancias Realizadas</div>
+                        <p class="kpi-value font-mono text-ganancia" id="hc-total-ganado">...</p>
+                    </div>
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Pérdidas Realizadas</div>
+                        <p class="kpi-value font-mono text-perdida" id="hc-total-perdido">...</p>
+                    </div>
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Ganancia Neta</div>
+                        <p class="kpi-value font-mono" id="hc-neta">...</p>
+                    </div>
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Más Rentable</div>
+                        <p class="kpi-value font-mono" id="hc-best" style="font-size:0.8rem; margin-top:4px;">...</p>
+                    </div>
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Mayor Pérdida</div>
+                        <p class="kpi-value font-mono" id="hc-worst" style="font-size:0.8rem; margin-top:4px;">...</p>
+                    </div>
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Tasa de Éxito</div>
+                        <p class="kpi-value font-mono" id="hc-success-rate">...</p>
+                        <div style="font-size:0.68rem; color:var(--text-muted);" id="hc-success-label"></div>
+                    </div>
+                </div>
+
+                <!-- Register button -->
+                <div style="margin-bottom:10px;">
+                    <button class="primary" onclick="toggleHCForm()">+ Registrar Operación Cerrada</button>
+                </div>
+
+                <!-- New closed trade form (hidden by default) -->
+                <div class="card" id="hc-form-card" style="display:none; margin-bottom:12px;">
+                    <div class="section-title">Nueva Operación Cerrada</div>
+                    <div class="form-row">
+                        <label>Activo
+                            <input type="text" id="hc-activo" placeholder="BTC, NVDA..." style="min-width:90px;">
+                        </label>
+                        <label>Fecha Compra
+                            <input type="date" id="hc-fecha-compra">
+                        </label>
+                        <label>Costo Total (USD)
+                            <input type="number" id="hc-costo" min="0" step="0.01" placeholder="500.00" oninput="calcHCForm()">
+                        </label>
+                        <label>Fecha Venta
+                            <input type="date" id="hc-fecha-venta">
+                        </label>
+                        <label>Ingreso Total (USD)
+                            <input type="number" id="hc-ingreso" min="0" step="0.01" placeholder="600.00" oninput="calcHCForm()">
+                        </label>
+                        <label>Tipo
+                            <select id="hc-tipo">
+                                <option value="Crypto">Crypto</option>
+                                <option value="Accion">Acción</option>
+                            </select>
+                        </label>
+                        <label>Notas (opcional)
+                            <input type="text" id="hc-notas" placeholder="Opcional">
+                        </label>
+                    </div>
+                    <div class="calc-result" id="hc-calc-result" style="display:none; margin:8px 0;">
+                        <div><span>Ganancia/Pérdida: </span><strong id="hc-calc-gp">-</strong></div>
+                        <div><span>G/P %: </span><strong id="hc-calc-pct">-</strong></div>
+                    </div>
+                    <div style="display:flex; gap:8px; margin-top:8px;">
+                        <button class="primary" onclick="submitHCForm()">Guardar</button>
+                        <button onclick="toggleHCForm()">Cancelar</button>
+                    </div>
+                </div>
+
+                <!-- Horizontal bar chart -->
+                <div class="card" style="margin-bottom:12px;">
+                    <div class="section-title">P&amp;L por Operación (mayor a menor)</div>
+                    <div id="hc-bar-chart" style="height:340px;"></div>
+                </div>
+
+                <!-- Operations table -->
+                <div class="card">
+                    <div class="section-title">Historial de Operaciones Cerradas</div>
+                    <div class="table-container">
+                        <table id="hc-table" style="min-width:900px;">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left;" onclick="sortHC(0)">Activo</th>
+                                    <th onclick="sortHC(1)">F. Compra</th>
+                                    <th onclick="sortHC(2)">Costo</th>
+                                    <th onclick="sortHC(3)">F. Venta</th>
+                                    <th onclick="sortHC(4)">Ingreso</th>
+                                    <th onclick="sortHC(5)">G/P USD</th>
+                                    <th onclick="sortHC(6)">G/P %</th>
+                                    <th onclick="sortHC(7)">Tipo</th>
+                                    <th onclick="sortHC(8)">Duración</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hc-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESUMEN GLOBAL VIEW -->
+        <div id="resumen-global" class="content-view">
+            <div class="section-body">
+                <!-- Main KPI Cards -->
+                <div class="kpi-row" style="flex-wrap:wrap; gap:8px;">
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Total Depositado en Hapi</div>
+                        <p class="kpi-value font-mono" id="rg-depositado">...</p>
+                    </div>
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Total Retirado</div>
+                        <p class="kpi-value font-mono text-perdida" id="rg-retirado">...</p>
+                    </div>
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Dinero Neto Puesto</div>
+                        <p class="kpi-value font-mono" id="rg-neto">...</p>
+                    </div>
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Ganancia Realizada</div>
+                        <p class="kpi-value font-mono" id="rg-realizada">...</p>
+                    </div>
+                    <div class="card kpi-card">
+                        <div class="kpi-title">P&amp;L No Realizado</div>
+                        <p class="kpi-value font-mono" id="rg-no-realizado">...</p>
+                    </div>
+                    <div class="card kpi-card">
+                        <div class="kpi-title">Comisiones Pagadas</div>
+                        <p class="kpi-value font-mono text-perdida" id="rg-comisiones">...</p>
+                    </div>
+                    <div class="card kpi-card" style="border-color:var(--blue-accent);">
+                        <div class="kpi-title">Resultado Neto Total</div>
+                        <p class="kpi-value font-mono" id="rg-resultado">...</p>
+                    </div>
+                    <div class="card kpi-card" style="min-width:210px;" title="$10 fijos por retiro SPEI según tarifa Hapi">
+                        <div class="kpi-title">Retiros realizados</div>
+                        <p class="kpi-value font-mono" id="rg-retiros-bruto">...</p>
+                        <div id="rg-retiros-detail" style="font-size:0.68rem; color:var(--text-muted); margin-top:4px; line-height:1.6;"></div>
+                    </div>
+                    <div class="card kpi-card" style="min-width:230px;" title="Cada retiro se hizo después de una venta con ganancia positiva">
+                        <div class="kpi-title">¿Retiraste en ganancia?</div>
+                        <div id="rg-retiros-ganancia" style="font-size:0.7rem; margin-top:4px; line-height:1.7;"></div>
+                    </div>
+                </div>
+
+                <!-- Timeline chart -->
+                <div class="card" style="margin-bottom:12px;">
+                    <div class="section-title">Línea de Tiempo — Capital Acumulado en Hapi</div>
+                    <div id="rg-timeline-chart" style="height:240px;"></div>
+                </div>
+
+                <!-- Deposits/Withdrawals table -->
+                <div class="card" style="margin-bottom:12px;">
+                    <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Depósitos y Retiros Históricos</span>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <span id="dr-totals" style="font-size:0.72rem; color:var(--text-muted);"></span>
+                            <button class="primary" onclick="toggleDRForm()" style="font-size:0.72rem; padding:3px 10px;">+ Agregar</button>
+                        </div>
+                    </div>
+                    <!-- Add form -->
+                    <div id="dr-form" style="display:none; padding:10px 0; border-bottom:1px solid var(--border-color); margin-bottom:8px;">
+                        <div class="form-row" style="align-items:flex-end;">
+                            <label>Fecha <input type="date" id="dr-fecha"></label>
+                            <label>Tipo
+                                <select id="dr-tipo">
+                                    <option value="Deposito">Depósito</option>
+                                    <option value="Retiro">Retiro</option>
+                                </select>
+                            </label>
+                            <label>Monto (USD)
+                                <input type="number" id="dr-monto" min="0" step="0.01" placeholder="100.00">
+                            </label>
+                            <div style="display:flex; gap:6px;">
+                                <button class="primary" onclick="submitDR()">Guardar</button>
+                                <button onclick="toggleDRForm()">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-container" style="max-height:200px; overflow-y:auto;">
+                        <table id="dr-table" style="min-width:400px;">
+                            <thead style="position:sticky; top:0; background:var(--bg-card);">
+                                <tr>
+                                    <th style="text-align:left;">Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Monto (USD)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dr-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Unified movements -->
+                <div class="card">
+                    <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Mis Movimientos Registrados</span>
+                        <button class="primary" onclick="exportMovimientosCSV()" style="font-size:0.72rem; padding:3px 10px;">Exportar CSV</button>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-bottom:8px; flex-wrap:wrap; align-items:flex-end;">
+                        <label style="font-size:0.72rem; color:var(--text-muted); display:flex; flex-direction:column; gap:3px;">
+                            Tipo
+                            <select id="mov-filter-tipo" onchange="filterMovimientos()">
+                                <option value="">Todos</option>
+                                <option value="Compra">Compra</option>
+                                <option value="Venta">Venta</option>
+                                <option value="Deposito">Depósito</option>
+                                <option value="Retiro">Retiro</option>
+                            </select>
+                        </label>
+                        <label style="font-size:0.72rem; color:var(--text-muted); display:flex; flex-direction:column; gap:3px;">
+                            Activo
+                            <input type="text" id="mov-filter-activo" placeholder="BTC, ETH..." oninput="filterMovimientos()" style="min-width:100px;">
+                        </label>
+                    </div>
+                    <div class="table-container">
+                        <table id="mov-unified-table" style="min-width:700px;">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left;">Fecha</th>
+                                    <th>Tipo</th>
+                                    <th style="text-align:left;">Activo</th>
+                                    <th>Monto</th>
+                                    <th>Comisión</th>
+                                    <th>Neto</th>
+                                    <th style="text-align:left;">Notas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mov-unified-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- Prediction Modal -->
+<div id="modal-backdrop" onclick="closePrediction()"></div>
+<div id="predict-modal" style="width:720px; max-width:95vw; max-height:90vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3 style="margin:0; font-size:1rem;">Análisis Cuantitativo <span id="ml-asset-title"></span></h3>
+        <button onclick="closePrediction()" style="border:none; cursor:pointer; background:transparent; color:var(--text-main);">✖</button>
+    </div>
+    <!-- Model tabs -->
+    <div style="display:flex; gap:6px; margin-bottom:10px;">
+        <button id="tab-arima" class="modal-tab active" onclick="switchModelTab('arima')">ARIMA</button>
+        <button id="tab-lstm"  class="modal-tab"        onclick="switchModelTab('lstm')">LSTM</button>
+    </div>
+    <div id="ml-loading" style="text-align:center; padding:30px; color:var(--text-muted);">
+        Calculando modelo, por favor espere (10-30 s)...
+    </div>
+    <div id="ml-content" style="display:none;">
+        <!-- Row 1: ARIMA KPIs -->
+        <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+            <div class="card kpi-card"><div class="kpi-title">Tendencia ARIMA</div><p id="mb-trend" class="font-mono" style="margin:0"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">Break-even (90d)</div><p id="mb-be" class="font-mono" style="margin:0; font-size:0.72rem;"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">% al Break-even</div><p id="mb-pct-be" class="font-mono" style="margin:0"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">Pred. +30d</div><p id="mb-p30" class="font-mono" style="margin:0"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">Pred. +60d</div><p id="mb-p60" class="font-mono" style="margin:0"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">Pred. +90d</div><p id="mb-p90" class="font-mono" style="margin:0"></p></div>
+        </div>
+        <!-- Row 2: Technical indicators KPIs -->
+        <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;" id="mb-tech-row">
+            <div class="card kpi-card"><div class="kpi-title">RSI (14)</div><p id="mb-rsi" class="font-mono" style="margin:0; font-size:0.8rem;"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">MA50</div><p id="mb-ma50" class="font-mono" style="margin:0; font-size:0.78rem;"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">MA200</div><p id="mb-ma200" class="font-mono" style="margin:0; font-size:0.78rem;"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">Señal MA</div><p id="mb-masig" class="font-mono" style="margin:0; font-size:0.72rem;"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">MACD Trend</div><p id="mb-macd-trend" class="font-mono" style="margin:0; font-size:0.8rem;"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">BB Posición</div><p id="mb-bb-pos" class="font-mono" style="margin:0; font-size:0.68rem;"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">Sentiment</div><p id="mb-sent" class="font-mono" style="margin:0; font-size:0.8rem;"></p></div>
+        </div>
+        <!-- Bollinger Bands values -->
+        <div id="mb-bb-row" style="display:flex; gap:6px; margin-bottom:8px; font-size:0.7rem; color:var(--text-muted);">
+            BB: <span id="mb-bb-upper" style="color:#ff8c69;"></span> /
+            <span id="mb-bb-mid"   style="color:var(--blue-accent);"></span> /
+            <span id="mb-bb-lower" style="color:#69ff69;"></span>
+        </div>
+        <!-- ARIMA Plotly chart -->
+        <div id="plotlyChart" style="height: 260px;"></div>
+        <!-- MACD chart -->
+        <div id="macd-chart-wrap" style="margin-top:8px;">
+            <div style="font-size:0.68rem; color:var(--text-muted); margin-bottom:2px;">MACD (12,26,9)</div>
+            <div id="macdChart" style="height:100px;"></div>
+        </div>
+        <!-- News -->
+        <div id="mb-news" style="margin-top:8px; font-size:0.72rem;"></div>
+        <div style="color:var(--text-muted); font-size:0.65rem; margin-top:6px; text-align:right;" id="mb-model-label"></div>
+    </div>
+
+    <!-- LSTM Panel -->
+    <div id="lstm-content" style="display:none;">
+        <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+            <div class="card kpi-card"><div class="kpi-title">Pred. +30d</div><p id="lstm-p30" class="font-mono" style="margin:0"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">Pred. +60d</div><p id="lstm-p60" class="font-mono" style="margin:0"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">Pred. +90d</div><p id="lstm-p90" class="font-mono" style="margin:0"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">Confiabilidad</div><p id="lstm-score" class="font-mono" style="margin:0"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">MAPE</div><p id="lstm-mape" class="font-mono" style="margin:0"></p></div>
+            <div class="card kpi-card"><div class="kpi-title">Dir. Correcta</div><p id="lstm-dir" class="font-mono" style="margin:0"></p></div>
+        </div>
+        <div id="lstm-badge-row" style="margin-bottom:8px; font-size:0.75rem;"></div>
+        <div id="lstm-plotly" style="height:260px;"></div>
+        <div id="lstm-warning" style="display:none; color:var(--yellow,#D29922); font-size:0.72rem; margin-top:6px;
+             padding:6px; border:1px solid var(--yellow,#D29922); border-radius:4px;">
+            ⚠ Baja confiabilidad (MAPE > 15%). Usa esta predicción con cautela.
+        </div>
+        <div style="color:var(--text-muted); font-size:0.65rem; margin-top:6px; text-align:right;">
+            Modelo: PyTorch LSTM (128→64→32) · Monte Carlo Dropout (20 passes)
+        </div>
+        <div style="color:var(--red-loss); font-size:0.65rem; margin-top:4px; text-align:center; font-style:italic;">
+            Señal informativa, no consejo financiero
+        </div>
+    </div>
+    <div id="lstm-no-model" style="display:none; text-align:center; padding:20px; color:var(--text-muted);">
+        Modelo LSTM no entrenado para este activo.<br>
+        <button class="primary" style="margin-top:10px;" onclick="trainAssetLSTM()">Entrenar ahora</button>
+        <div id="lstm-train-status" style="margin-top:8px; font-size:0.72rem;"></div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

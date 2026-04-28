@@ -1,0 +1,30 @@
+﻿# Datos personales - NO subir
+compras.csv
+ventas.csv
+historial_cerrado.csv
+depositos_retiros.csv
+movimientos.csv
+metas.json
+config.json
+portfolio_log.csv
+indicators_log.csv
+api_keys.json
+
+# Carpetas con modelos ML y datos (son pesados y personales)
+models/
+data/
+predictions/
+scalers/
+.claude/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+*.egg-info/
+
+# Sistema
+.DS_Store
+Thumbs.db
