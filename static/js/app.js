@@ -1078,9 +1078,9 @@ function renderCorrHeatmap(data) {
     const ctx = canvas.getContext('2d');
 
     const wrap = document.getElementById('corr-canvas-wrap');
-    // Use explicit fallback size if the element isn't yet painted
-    const rawW = wrap.getBoundingClientRect().width || wrap.offsetWidth || 500;
-    const size = Math.min(Math.max(rawW, 300), 520);
+    const rect = wrap.getBoundingClientRect();
+    const rawW = (rect.width > 10 ? rect.width : wrap.offsetWidth) || 480;
+    const size = Math.min(Math.max(Math.floor(rawW), 280), 520);
     canvas.width  = size;
     canvas.height = size;
 

@@ -563,9 +563,13 @@ button.primary:hover { opacity: 0.9; }
 /* Correlation heatmap container */
 #corr-canvas-wrap {
     position: relative;
-    height: 340px;
-    max-width: 500px;
+    max-width: 520px;
+    width: 100%;
     margin: 0 auto;
+}
+
+#corrChart {
+    display: block;
 }
 
 /* Header alert overrides for signals */
