@@ -1,135 +1,133 @@
 <div align="center">
 
-# Portfolio Analytics Terminal
+# Terminal de Análisis de Portafolio
 
-**A self-hosted, real-time portfolio dashboard with ML price predictions, technical indicators, and full accounting for crypto & stocks.**
+**Un dashboard de portafolio en tiempo real, autoalojado, con predicciones ML, indicadores técnicos y contabilidad completa para cripto y acciones.**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-2.x-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
 [![PyTorch](https://img.shields.io/badge/PyTorch-LSTM-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org)
 [![Chart.js](https://img.shields.io/badge/Chart.js-Plotly-FF6384?style=for-the-badge&logo=chartdotjs&logoColor=white)](https://www.chartjs.org)
-[![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Active-22c55e?style=for-the-badge)]()
+[![Licencia](https://img.shields.io/badge/Licencia-MIT-22c55e?style=for-the-badge)](LICENSE)
+[![Estado](https://img.shields.io/badge/Estado-Activo-22c55e?style=for-the-badge)]()
 
 </div>
 
 ---
 
-> A terminal-style web dashboard that turns your crypto and stock holdings into a fully instrumented analytics hub — complete with LSTM neural network predictions, ARIMA forecasting, 14+ technical indicators, and regulatory-ready tax reporting. Runs entirely on your machine.
+> Un dashboard web estilo terminal que convierte tus tenencias de cripto y acciones en un hub de análisis completamente instrumentado — con predicciones mediante redes neuronales LSTM, pronósticos ARIMA, más de 14 indicadores técnicos y reportes fiscales listos para declarar. Corre completamente en tu máquina.
 
 ---
 
-## Screenshots
+## Capturas de Pantalla
 
-> _Screenshots coming soon. Run the app locally and add yours here._
+| Dashboard | Predicciones ML | Indicadores Técnicos |
+|-----------|-----------------|----------------------|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Predicciones](docs/screenshots/predicciones.png) | ![Indicadores](docs/screenshots/Indicadores.png) |
 
-| Dashboard | ML Predictions | Technical Indicators |
-|-----------|---------------|----------------------|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Predictions](docs/screenshots/predicciones.png) | ![Indicators](docs/screenshots/Indicadores.png) |
-
-| Correlation Matrix | Trade History | Tax Report |
-|--------------------|---------------|------------|
-| ![Correlations](docs/screenshots/correlaciones.png) | ![Trades](docs/screenshots/historial_cerrado.png) | ![Fiscal](docs/screenshots/fiscal.png) |
+| Matriz de Correlaciones | Historial de Operaciones | Reporte Fiscal |
+|-------------------------|--------------------------|----------------|
+| ![Correlaciones](docs/screenshots/correlaciones.png) | ![Operaciones](docs/screenshots/historial_cerrado.png) | ![Fiscal](docs/screenshots/fiscal.png) |
 
 ---
 
-## Features
+## Funcionalidades
 
-### ML Predictions
-- **LSTM Neural Network** — 3-layer PyTorch model (128→64→32 hidden units) trained on 13 features including price, volume, RSI, MACD, Bollinger Bands, MA50/200, sentiment score, Fear & Greed Index, and BTC dominance
-- **ARIMA Forecasting** — Automatic order selection with 90-day price forecasts and 95% confidence intervals
-- **Monte Carlo Dropout** — 20 forward passes to generate uncertainty bands (±1.96σ) around LSTM predictions
-- **Hybrid BUY/HOLD/SELL Signal** — Weighted scoring combining LSTM direction, RSI, MACD momentum, sentiment, and market fear; each signal includes human-readable reasoning
-- **30 / 60 / 90-day horizons** — Interactive Plotly forecast charts with confidence bands
-- **Reliability score** — Per-model MAPE + directional accuracy metric surfaced in the UI
-- **Auto-retraining** — APScheduler triggers fresh LSTM training every Sunday at 2 AM
+### Predicciones ML
+- **Red Neuronal LSTM** — Modelo PyTorch de 3 capas (128→64→32 unidades ocultas) entrenado con 13 características: precio, volumen, RSI, MACD, Bandas de Bollinger, MA50/200, puntuación de sentimiento, Índice de Miedo & Codicia y dominancia de BTC
+- **Pronóstico ARIMA** — Selección automática de órdenes con proyecciones de precio a 90 días e intervalos de confianza al 95%
+- **Monte Carlo Dropout** — 20 pasadas hacia adelante para generar bandas de incertidumbre (±1.96σ) alrededor de las predicciones LSTM
+- **Señal Híbrida COMPRA/MANTENER/VENTA** — Puntuación ponderada que combina dirección LSTM, RSI, momentum MACD, sentimiento y miedo del mercado; cada señal incluye razonamiento legible
+- **Horizontes de 30 / 60 / 90 días** — Gráficas de pronóstico interactivas con Plotly y bandas de confianza
+- **Puntuación de fiabilidad** — Métrica MAPE + precisión direccional por modelo, visible en la interfaz
+- **Re-entrenamiento automático** — APScheduler lanza el entrenamiento LSTM cada domingo a las 2 AM
 
-### Technical Indicators
-- RSI (14 period) with overbought / oversold zones
-- MACD (12/26/9) histogram trend signal
-- Bollinger Bands (20 period, k=2) with band-position classification
-- MA50 / MA200 crossovers — Golden Cross / Death Cross detection
-- Trend state labels: _Alcista fuerte_, _Recuperación_, _Lateral_, _Bajista_
-- 24h trading volume (Binance for crypto, Yahoo Finance for stocks)
-- News sentiment score from CryptoPanic + CoinDesk RSS
-- Fear & Greed Index (CoinGecko) and BTC Dominance (CoinPaprika)
+### Indicadores Técnicos
+- RSI (período 14) con zonas de sobrecompra/sobreventa
+- MACD (12/26/9) señal de tendencia por histograma
+- Bandas de Bollinger (período 20, k=2) con clasificación por posición de banda
+- Cruces MA50/MA200 — detección de Cruz Dorada / Cruz de la Muerte
+- Etiquetas de estado de tendencia: _Alcista fuerte_, _Recuperación_, _Lateral_, _Bajista_
+- Volumen de operaciones en 24h (Binance para cripto, Yahoo Finance para acciones)
+- Puntuación de sentimiento de noticias desde CryptoPanic + RSS de CoinDesk
+- Índice de Miedo & Codicia (CoinGecko) y Dominancia de BTC (CoinPaprika)
 
-### Real-time Portfolio KPIs
-- Portfolio total value, global P&L (USD and %)
-- Per-asset: price, quantity, average cost, invested capital, current value, P&L, distance to break-even
-- Best / worst performer by percentage
-- Net balance after commissions (Hapi, Bakkt, SPEI)
-- Live USD→MXN FX conversion for withdrawal calculations
-- 10 draggable KPI cards with `localStorage` persistence
-- Break-even alerts, 10% additional-drop warnings, stop-loss breach notifications
+### KPIs del Portafolio en Tiempo Real
+- Valor total del portafolio, P&L global (USD y %)
+- Por activo: precio, cantidad, costo promedio, capital invertido, valor actual, P&L, distancia al punto de equilibrio
+- Mejor / peor desempeño por porcentaje
+- Saldo neto después de comisiones (Hapi, Bakkt, SPEI)
+- Conversión en vivo USD→MXN para cálculos de retiros
+- 10 tarjetas KPI arrastrables con persistencia en `localStorage`
+- Alertas de punto de equilibrio, avisos de caída adicional del 10% y notificaciones de ruptura de stop-loss
 
-### Dashboard Sections
-| Section | Description |
+### Secciones del Dashboard
+| Sección | Descripción |
 |---------|-------------|
-| **Dashboard** | Live KPI cards, market bar, signal badges, portfolio table with 7-day sparklines |
-| **Centro de Predicciones** | ARIMA + LSTM forecast charts with signal rationale |
-| **Correlaciones** | Pearson correlation heatmap across all assets |
-| **Registro de Compra / Venta** | Add buys and sales with commission-aware P&L |
-| **Importar HAPI CSV** | Bulk-import trade history from exchange export |
-| **Mis Metas** | Per-asset stop-loss / take-profit target configuration |
-| **Resumen Fiscal** | Year-over-year realized gains/losses for tax filing |
-| **Resumen Global** | Total deposited, withdrawn, realized P&L, commissions |
-| **Historial Cerrado** | Full audit trail of all closed positions |
-| **Log Histórico** | Portfolio value history chart (48h rolling window) |
-| **Depósito MX → Hapi** | Record MXN deposits with live exchange rate |
+| **Dashboard** | Tarjetas KPI en vivo, barra de mercado, insignias de señales, tabla de portafolio con sparklines de 7 días |
+| **Centro de Predicciones** | Gráficas de pronóstico ARIMA + LSTM con razonamiento de señales |
+| **Correlaciones** | Mapa de calor de correlación de Pearson entre todos los activos |
+| **Registro de Compra / Venta** | Registrar compras y ventas con P&L considerando comisiones |
+| **Importar HAPI CSV** | Importación masiva de historial de operaciones desde exportación del exchange |
+| **Mis Metas** | Configuración de stop-loss / take-profit por activo |
+| **Resumen Fiscal** | Ganancias/pérdidas realizadas año a año para declaración de impuestos |
+| **Resumen Global** | Total depositado, retirado, P&L realizado y comisiones |
+| **Historial Cerrado** | Registro de auditoría completo de todas las posiciones cerradas |
+| **Log Histórico** | Gráfica del historial de valor del portafolio (ventana deslizante de 48h) |
+| **Depósito MX → Hapi** | Registrar depósitos en MXN con tipo de cambio en tiempo real |
 
 ---
 
-## Tech Stack
+## Stack Tecnológico
 
 ### Backend
-| Library | Purpose |
-|---------|---------|
-| **Flask** | HTTP server, REST API routing |
-| **PyTorch** | LSTM model training and inference |
-| **scikit-learn** | MinMaxScaler, preprocessing pipelines |
-| **statsmodels** | ARIMA time-series modeling |
-| **pandas / numpy** | Data manipulation and indicator math |
-| **APScheduler** | Weekly LSTM retraining cron job |
-| **requests** | HTTP client for all external APIs |
+| Librería | Propósito |
+|----------|-----------|
+| **Flask** | Servidor HTTP, enrutamiento de la REST API |
+| **PyTorch** | Entrenamiento e inferencia del modelo LSTM |
+| **scikit-learn** | MinMaxScaler, pipelines de preprocesamiento |
+| **statsmodels** | Modelado de series de tiempo con ARIMA |
+| **pandas / numpy** | Manipulación de datos y cálculo de indicadores |
+| **APScheduler** | Tarea cron semanal de re-entrenamiento LSTM |
+| **requests** | Cliente HTTP para todas las APIs externas |
 
-### External APIs
-| API | Data |
-|-----|------|
-| **Binance REST** | Real-time crypto prices, 1h OHLCV candles |
-| **Finnhub** | Stock quotes and fundamentals |
-| **CoinGecko** | Crypto historical OHLCV (LSTM training) |
-| **CryptoPanic** | News feed for sentiment analysis |
-| **ExchangeRate-API** | Live USD→MXN conversion |
-| **CoinPaprika** | BTC dominance |
+### APIs Externas
+| API | Datos |
+|-----|-------|
+| **Binance REST** | Precios cripto en tiempo real, velas OHLCV de 1h |
+| **Finnhub** | Cotizaciones y fundamentos de acciones |
+| **CoinGecko** | OHLCV histórico de cripto (entrenamiento LSTM) |
+| **CryptoPanic** | Feed de noticias para análisis de sentimiento |
+| **ExchangeRate-API** | Conversión en vivo USD→MXN |
+| **CoinPaprika** | Dominancia de BTC |
 
 ### Frontend
-| Library | Purpose |
-|---------|---------|
-| **Vanilla JS** | No framework dependency |
-| **Chart.js** | KPI donut/bar charts, sparklines |
-| **Plotly** | Interactive forecast charts with confidence bands |
-| **PapaParse** | CSV parsing for trade import |
-| **IntersectionObserver** | Lazy-loading sparklines |
+| Librería | Propósito |
+|----------|-----------|
+| **Vanilla JS** | Sin dependencia de framework |
+| **Chart.js** | Gráficas donut/barra para KPIs, sparklines |
+| **Plotly** | Gráficas de pronóstico interactivas con bandas de confianza |
+| **PapaParse** | Parseo de CSV para importación de operaciones |
+| **IntersectionObserver** | Carga diferida de sparklines |
 
 ---
 
-## Installation
+## Instalación
 
-### Prerequisites
+### Requisitos previos
 - Python 3.10+
 - pip
-- Binance account (free) for crypto prices
-- Finnhub API key (free tier) for stock quotes
+- Cuenta de Binance (gratuita) para precios de cripto
+- API key de Finnhub (nivel gratuito) para cotizaciones de acciones
 
-### 1. Clone the repository
+### 1. Clonar el repositorio
 
 ```bash
 git clone https://github.com/your-username/portfolio-analytics-terminal.git
 cd portfolio-analytics-terminal
 ```
 
-### 2. Create a virtual environment
+### 2. Crear un entorno virtual
 
 ```bash
 python -m venv .venv
@@ -141,31 +139,31 @@ source .venv/bin/activate
 .venv\Scripts\activate
 ```
 
-### 3. Install dependencies
+### 3. Instalar dependencias
 
 ```bash
 pip install flask torch scikit-learn statsmodels pandas numpy \
             apscheduler requests plotly
 ```
 
-> **GPU support (optional):** Install the CUDA-enabled PyTorch build from [pytorch.org](https://pytorch.org/get-started/locally/) for faster LSTM training.
+> **Soporte GPU (opcional):** Instala la versión de PyTorch con CUDA desde [pytorch.org](https://pytorch.org/get-started/locally/) para un entrenamiento LSTM más rápido.
 
-### 4. Configure API keys
+### 4. Configurar las API keys
 
-Create `api_keys.json` in the project root:
+Crea el archivo `api_keys.json` en la raíz del proyecto:
 
 ```json
 {
-  "finnhub_key": "YOUR_FINNHUB_KEY",
+  "finnhub_key": "TU_CLAVE_FINNHUB",
   "coingecko_key": ""
 }
 ```
 
-> CoinGecko public tier works without a key (rate-limited to 30-second intervals). A free API key removes most limits.
+> CoinGecko funciona sin clave en el nivel público (con límite de tasa de 30 segundos). Una API key gratuita elimina la mayoría de los límites.
 
-### 5. Configure your portfolio
+### 5. Configurar tu portafolio
 
-Create `metas.json` with your per-asset trading goals:
+Crea `metas.json` con tus objetivos de trading por activo:
 
 ```json
 {
@@ -174,29 +172,29 @@ Create `metas.json` with your per-asset trading goals:
 }
 ```
 
-### 6. Run the app
+### 6. Ejecutar la aplicación
 
 ```bash
 python app.py
 ```
 
-Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
+Abre [http://127.0.0.1:5000](http://127.0.0.1:5000) en tu navegador.
 
 ---
 
-## Running as a Windows Service (optional)
+## Ejecutar como Servicio de Windows (opcional)
 
-Use [NSSM](https://nssm.cc) to run the app as a persistent Windows background service:
+Usa [NSSM](https://nssm.cc) para ejecutar la app como un servicio de Windows persistente en segundo plano:
 
 ```powershell
-# Install (run as Administrator)
+# Instalar (ejecutar como Administrador)
 .\install_service.ps1
 
-# Uninstall
+# Desinstalar
 .\uninstall_service.ps1
 ```
 
-Or use the batch launcher:
+O usa el lanzador por lotes:
 
 ```bat
 run_flask.bat
@@ -204,109 +202,109 @@ run_flask.bat
 
 ---
 
-## API Reference
+## Referencia de la API
 
-All endpoints return JSON. The frontend polls these automatically, but you can also query them directly.
+Todos los endpoints devuelven JSON. El frontend los consulta automáticamente, pero también puedes llamarlos directamente.
 
-| Method | Endpoint | Description | Cache TTL |
-|--------|----------|-------------|-----------|
-| `GET` | `/api/data` | Portfolio snapshot — prices, values, P&L, alerts | 60s |
-| `GET` | `/api/sparklines` | 168-hour candles for mini-charts | 180s |
-| `GET` | `/api/indicators` | Technical indicators for all assets | 180s |
-| `GET` | `/api/correlations` | Pearson correlation matrix | — |
-| `GET` | `/api/fear-greed` | Market sentiment index | 300s |
-| `GET` | `/api/exchange-rate` | USD → MXN live rate | 3600s |
-| `GET` | `/api/predict/<asset>` | ARIMA 90-day forecast | 30 min |
-| `GET` | `/api/lstm/predictions/<asset>` | LSTM 30/60/90-day forecast | — |
-| `GET` | `/api/lstm/signal/<asset>` | Hybrid BUY / HOLD / SELL signal | — |
-| `GET` | `/api/fiscal` | Tax report (realized gains by year) | — |
-| `GET` | `/api/resumen-global` | Aggregate accounting summary | — |
-| `POST` | `/api/compras` | Log a new buy transaction | — |
-| `POST` | `/api/ventas` | Log a new sale with P&L | — |
-| `GET/POST` | `/api/goals` | Per-asset trading goal configuration | — |
+| Método | Endpoint | Descripción | TTL de caché |
+|--------|----------|-------------|--------------|
+| `GET` | `/api/data` | Snapshot del portafolio — precios, valores, P&L, alertas | 60s |
+| `GET` | `/api/sparklines` | Velas de 168 horas para mini-gráficas | 180s |
+| `GET` | `/api/indicators` | Indicadores técnicos de todos los activos | 180s |
+| `GET` | `/api/correlations` | Matriz de correlación de Pearson | — |
+| `GET` | `/api/fear-greed` | Índice de sentimiento del mercado | 300s |
+| `GET` | `/api/exchange-rate` | Tipo de cambio en vivo USD → MXN | 3600s |
+| `GET` | `/api/predict/<activo>` | Pronóstico ARIMA a 90 días | 30 min |
+| `GET` | `/api/lstm/predictions/<activo>` | Pronóstico LSTM a 30/60/90 días | — |
+| `GET` | `/api/lstm/signal/<activo>` | Señal híbrida COMPRA / MANTENER / VENTA | — |
+| `GET` | `/api/fiscal` | Reporte fiscal (ganancias realizadas por año) | — |
+| `GET` | `/api/resumen-global` | Resumen contable agregado | — |
+| `POST` | `/api/compras` | Registrar una nueva operación de compra | — |
+| `POST` | `/api/ventas` | Registrar una nueva venta con P&L | — |
+| `GET/POST` | `/api/goals` | Configuración de objetivos de trading por activo | — |
 
 ---
 
-## Project Structure
+## Estructura del Proyecto
 
 ```
 portfolio-analytics-terminal/
-├── app.py                  # Flask server, all API routes, caching, threading
-├── lstm_model.py           # PyTorch LSTM architecture, training, Monte Carlo inference
-├── predictor.py            # ARIMA forecasting engine
-├── indicators.py           # Technical indicator math, sentiment, Fear & Greed
+├── app.py                  # Servidor Flask, todas las rutas API, caché, hilos
+├── lstm_model.py           # Arquitectura LSTM en PyTorch, entrenamiento, inferencia Monte Carlo
+├── predictor.py            # Motor de pronóstico ARIMA
+├── indicators.py           # Cálculo de indicadores técnicos, sentimiento, Miedo & Codicia
 ├── templates/
-│   └── index.html          # Single-page dashboard UI
+│   └── index.html          # UI del dashboard de una sola página
 ├── static/
-│   ├── css/style.css       # Dark terminal theme
-│   └── js/app.js           # Frontend logic, Chart.js, Plotly, lazy loading
-├── models/                 # Saved LSTM weights (.pt)
-├── scalers/                # Fitted MinMaxScaler objects (.pkl)
-├── predictions/            # Cached LSTM prediction JSON files
-├── data/                   # Preprocessed LSTM training sequences (.npy)
-├── api_keys.json           # API credentials (git-ignored)
-├── metas.json              # Per-asset trading goals
-├── compras.csv             # Buy transaction log
-├── ventas.csv              # Sale transaction log
-├── movimientos.csv         # Unified movement log
-├── portfolio_log.csv       # Portfolio value history (48h rolling)
-├── indicators_log.csv      # Technical indicator history (5760 rows)
-├── install_service.ps1     # Windows NSSM service installer
-├── uninstall_service.ps1   # Windows NSSM service remover
-└── run_flask.bat           # Windows batch launcher
+│   ├── css/style.css       # Tema oscuro estilo terminal
+│   └── js/app.js           # Lógica frontend, Chart.js, Plotly, carga diferida
+├── models/                 # Pesos guardados del LSTM (.pt)
+├── scalers/                # Objetos MinMaxScaler ajustados (.pkl)
+├── predictions/            # Archivos JSON de predicciones LSTM en caché
+├── data/                   # Secuencias de entrenamiento LSTM preprocesadas (.npy)
+├── api_keys.json           # Credenciales de API (ignorado por git)
+├── metas.json              # Objetivos de trading por activo
+├── compras.csv             # Registro de operaciones de compra
+├── ventas.csv              # Registro de operaciones de venta
+├── movimientos.csv         # Registro unificado de movimientos
+├── portfolio_log.csv       # Historial de valor del portafolio (ventana de 48h)
+├── indicators_log.csv      # Historial de indicadores técnicos (5760 filas)
+├── install_service.ps1     # Instalador del servicio NSSM para Windows
+├── uninstall_service.ps1   # Desinstalador del servicio NSSM para Windows
+└── run_flask.bat           # Lanzador por lotes para Windows
 ```
 
 ---
 
-## LSTM Model Details
+## Detalles del Modelo LSTM
 
 ```
-Input:  60-day sequences × 13 features
-         └─ price, volume, RSI, MACD, Bollinger Bands,
-            MA50, MA200, sentiment, fear/greed, BTC dominance
+Entrada:  Secuencias de 60 días × 13 características
+           └─ precio, volumen, RSI, MACD, Bandas de Bollinger,
+              MA50, MA200, sentimiento, miedo/codicia, dominancia BTC
 
-Architecture:
+Arquitectura:
   LSTM(128) → Dropout(0.2)
   LSTM(64)  → Dropout(0.2)
   LSTM(32)  → Dropout(0.2)
   FC(16)    → FC(1)
 
-Training:   Adam · MSE loss · Early stopping (patience=10) · Max 100 epochs
-Inference:  Monte Carlo Dropout · 20 forward passes · ±1.96σ confidence bands
-Retraining: Every Sunday at 02:00 via APScheduler
+Entrenamiento:   Adam · pérdida MSE · Early stopping (paciencia=10) · Máx 100 épocas
+Inferencia:      Monte Carlo Dropout · 20 pasadas · bandas de confianza ±1.96σ
+Re-entrenamiento: Cada domingo a las 02:00 vía APScheduler
 ```
 
 ---
 
-## Contributing
+## Contribuciones
 
-Contributions are welcome. Please open an issue first to discuss what you'd like to change.
+Las contribuciones son bienvenidas. Por favor abre un issue primero para discutir los cambios que deseas realizar.
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit your changes: `git commit -m 'feat: add your feature'`
-4. Push to the branch: `git push origin feature/your-feature`
-5. Open a Pull Request
-
----
-
-## Roadmap
-
-- [ ] Docker / docker-compose setup
-- [ ] PostgreSQL backend (replace CSV files)
-- [ ] Transformer-based price prediction model
-- [ ] Email / Telegram alerts for stop-loss breaches
-- [ ] Multi-user authentication
-- [ ] Export portfolio report to PDF
+1. Haz un fork del repositorio
+2. Crea una rama para tu funcionalidad: `git checkout -b feature/tu-funcionalidad`
+3. Confirma tus cambios: `git commit -m 'feat: agregar tu funcionalidad'`
+4. Sube la rama: `git push origin feature/tu-funcionalidad`
+5. Abre un Pull Request
 
 ---
 
-## License
+## Hoja de Ruta
+
+- [ ] Configuración con Docker / docker-compose
+- [ ] Backend con PostgreSQL (reemplazar archivos CSV)
+- [ ] Modelo de predicción de precios basado en Transformer
+- [ ] Alertas por correo / Telegram al romper stop-loss
+- [ ] Autenticación multi-usuario
+- [ ] Exportar reporte del portafolio a PDF
+
+---
+
+## Licencia
 
 [MIT](LICENSE) © Oswaldo Ramírez
 
 ---
 
 <div align="center">
-Built with Flask · PyTorch · Chart.js · Plotly
+Construido con Flask · PyTorch · Chart.js · Plotly
 </div>
